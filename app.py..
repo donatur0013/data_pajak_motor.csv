@@ -1,0 +1,114 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+
+st.set_page_config(
+    page_title="Dashboard Pajak Motor",
+    layout="wide"
+)
+
+# ======================
+# LOAD DATA
+# ======================
+data = pd.read_csv("data_pajak_motor.csv")
+
+# ======================
+# SIDEBAR
+# ======================
+st.sidebar.title("🚗 Dashboard Pajak Motor")
+menu = st.sidebar.radio(
+    "Pilih Dashboard:",
+    (
+        "Ringkasan",
+        "Transaksi",
+        "Pendapatan",
+        "Tren",
+        "Data Detail",
+        "Prediksi"
+    )
+)
+
+# ======================
+# DASHBOARD 1: RINGKASAN
+# ======================
+if menu == "Ringkasan":
+    st.title("📌 Dashboard Ringkasan")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Transaksi", int(data["transaksi"].sum()))
+    col2.metric("Rata-rata Transaksi", int(data["transaksi"].mean()))
+    col3.metric("Total Pendapatan (Rp)", f"{data['pendapatan'].sum():,}")
+
+    st.subheader("Distribusi Transaksi per Bulan")
+    st.bar_chart(data.set_index("bulan")["transaksi"])
+
+# ======================
+# DASHBOARD 2: TRANSAKSI
+# ======================
+elif menu == "Transaksi":
+    st.title("📊 Dashboard Transaksi")
+
+    st.line_chart(data.set_index("bulan")["transaksi"])
+    st.caption("Grafik perkembangan jumlah transaksi pajak motor")
+
+# ======================
+# DASHBOARD 3: PENDAPATAN
+# ======================
+elif menu == "Pendapatan":
+    st.title("💰 Dashboard Pendapatan")
+
+    st.area_chart(data.set_index("bulan")["pendapatan"])
+    st.caption("Grafik pendapatan pajak motor per bulan")
+
+# ======================
+# DASHBOARD 4: TREN
+# ======================
+elif menu == "Tren":
+    st.title("📈 Dashboard Tren")
+
+    data["pertumbuhan_transaksi"] = data["transaksi"].pct_change() * 100
+    data["pertumbuhan_pendapatan"] = data["pendapatan"].pct_change() * 100
+
+    col1, col2 = st.columns(2)
+    col1.line_chart(data.set_index("bulan")["pertumbuhan_transaksi"])
+    col2.line_chart(data.set_index("bulan")["pertumbuhan_pendapatan"])
+
+# ======================
+# DASHBOARD 5: DATA DETAIL
+# ======================
+elif menu == "Data Detail":
+    st.title("📋 Dashboard Data Detail")
+
+    st.dataframe(data)
+    st.download_button(
+        label="⬇️ Download Data CSV",
+        data=data.to_csv(index=False),
+        file_name="data_pajak_motor.csv",
+        mime="text/csv"
+    )
+
+# ======================
+# DASHBOARD 6: PREDIKSI (AI SEDERHANA)
+# ======================
+elif menu == "Prediksi":
+    st.title("🤖 Dashboard Prediksi Pendapatan")
+
+    bulan_prediksi = st.slider(
+        "Prediksi untuk bulan ke-",
+        min_value=1,
+        max_value=6,
+        value=3
+    )
+
+    rata_pendapatan = data["pendapatan"].mean()
+    prediksi = int(rata_pendapatan * (1 + 0.03 * bulan_prediksi))
+
+    st.metric(
+        label="Estimasi Pendapatan Mendatang (Rp)",
+        value=f"{prediksi:,}"
+    )
+
+    st.caption("Prediksi sederhana berbasis rata-rata (simulasi AI)")
+
+# ======================
+st.caption("⚠️ Data simulasi untuk keperluan akademik")
